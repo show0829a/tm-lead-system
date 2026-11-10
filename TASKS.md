@@ -10,17 +10,17 @@
 ## Track 1: 프로젝트 기반 & PostgreSQL 데이터베이스 스키마 (기반 인프라)
 > **선행 조건**: 없음 (가장 먼저 실행되어야 함)
 
-- [ ] **T-101: Next.js 프로젝트 초기화 및 필수 패키지 구성**
+- [x] **T-101: Next.js 프로젝트 초기화 및 필수 패키지 구성**
   - **대상 경로**: `admin-system/package.json`, `admin-system/tsconfig.json`, `admin-system/.env`
   - **상세 내용**: `admin-system/` 내 Next.js (App Router, TypeScript, Tailwind CSS) 및 `@prisma/client`, `prisma` 구성. 로컬에 외부 PostgreSQL 데몬이 없을 때도 100% 실제 PostgreSQL 엔진으로 즉시 구동되도록 `@electric-sql/pglite` 또는 로컬 PostgreSQL 서버 연동 설정 지원.
   - **구현 완료 판단 기준**: `admin-system/package.json`이 존재하고 `node_modules`가 설치되어 있음.
 
-- [ ] **T-102: PostgreSQL Prisma 스키마(`schema.prisma`) 작성 및 DB 반영**
+- [x] **T-102: PostgreSQL Prisma 스키마(`schema.prisma`) 작성 및 DB 반영**
   - **대상 경로**: `admin-system/prisma/schema.prisma`, `admin-system/src/lib/db.ts`
   - **상세 내용**: `SPEC.md` 2절에 정의된 7개 모델(`User`, `Site`, `SiteTmMapping`, `SystemAllocationConfig`, `Lead`, `ConsultMemo`, `SmsLog`, `AuditLog`)과 Enum들을 정확히 구현하고 `prisma generate` 및 스키마 푸시 완료.
   - **구현 완료 판단 기준**: `npx prisma validate`가 에러 없이 통과하고 `src/lib/db.ts`에서 `prisma` 인스턴스를 export함.
 
-- [ ] **T-103: 초기 시드 데이터(`prisma/seed.ts`) 작성 및 실행**
+- [x] **T-103: 초기 시드 데이터(`prisma/seed.ts`) 작성 및 실행**
   - **대상 경로**: `admin-system/prisma/seed.ts`
   - **상세 내용**:
     - 관리자 계정 1개 (`admin` / `admin1234`)
@@ -34,7 +34,7 @@
 ## Track 2: 개인정보 보안 모듈 & 자동 DB 배분 엔진 (코어 비즈니스 로직)
 > **선행 조건**: Track 1 완료 (`src/lib/db.ts` 사용)
 
-- [ ] **T-201: 고객 연락처 AES-256-GCM 암호화·마스킹·해시 모듈 구현**
+- [x] **T-201: 고객 연락처 AES-256-GCM 암호화·마스킹·해시 모듈 구현**
   - **대상 경로**: `admin-system/src/lib/crypto.ts`
   - **상세 내용**:
     - `normalizePhone(raw: string): string`
@@ -44,14 +44,14 @@
     - `hashPhone(phone: string): string` (HMAC-SHA256)
   - **구현 완료 판단 기준**: `encryptPhone` 후 `decryptPhone` 호출 시 원문과 100% 일치하고, `maskPhone("01012345678")`이 `"010-****-5678"`을 반환함.
 
-- [ ] **T-202: 세션 인증(HttpOnly 쿠키) 및 권한 격리(RBAC) 가드 구현**
+- [x] **T-202: 세션 인증(HttpOnly 쿠키) 및 권한 격리(RBAC) 가드 구현**
   - **대상 경로**: `admin-system/src/lib/auth.ts`
   - **상세 내용**:
     - 비밀번호 해싱/검증 함수
     - `createSessionCookie`, `getSessionUser`, `requireAdmin`, `requireTmOrAdmin` 구현
   - **구현 완료 판단 기준**: 비로그인 시 `401`, TM 계정이 `requireAdmin` 호출 시 `403` 에러를 반환함.
 
-- [ ] **T-203: SMS 자동 발송 어댑터 구현**
+- [x] **T-203: SMS 자동 발송 어댑터 구현**
   - **대상 경로**: `admin-system/src/lib/sms.ts`
   - **상세 내용**:
     - `sendAllocationSms({ leadId, tmId })` 함수 구현
@@ -59,7 +59,7 @@
     - `isSmsReceiveOn === true`이면 템플릿 변수(`{siteName}`, `{customerName}`, `{customerPhone}`, `{carModel}`, `{carYear}`, `{region}`)를 치환하여 `SmsLog`에 `MOCK_SENT`(또는 실발송 `SENT`) 기록
   - **구현 완료 판단 기준**: 배정 시 `sms_logs` 테이블에 치환된 문자 전문과 상태가 정확히 저장됨.
 
-- [ ] **T-204: 자동 DB 배분 엔진 및 수동/포인터 제어 로직 구현**
+- [x] **T-204: 자동 DB 배분 엔진 및 수동/포인터 제어 로직 구현**
   - **대상 경로**: `admin-system/src/lib/allocation-engine.ts`
   - **상세 내용**:
     1. `ingestAndAllocateLead(input)`: 외부 사이트 유입 시 중복 접수 차단 확인 → PostgreSQL 트랜잭션 락 → 통합 순번 또는 사이트별 매핑 순번 조회 → `isDbReceiveOn === true`인 다음 TM 탐색 (`false`인 TM은 자동 스킵, 전원 `false`이면 `UNASSIGNED` 저장) → 포인터를 다음 순번으로 이동 → SMS 자동 발송 호출.
@@ -75,7 +75,7 @@
 ## Track 3: 백엔드 REST API 엔드포인트 구현
 > **선행 조건**: Track 2 완료
 
-- [ ] **T-301: 외부 모집 사이트용 DB 수집 API (`POST /api/v1/leads` & `OPTIONS` CORS)**
+- [x] **T-301: 외부 모집 사이트용 DB 수집 API (`POST /api/v1/leads` & `OPTIONS` CORS)**
   - **대상 경로**: `admin-system/src/app/api/v1/leads/route.ts`
   - **상세 내용**:
     - `OPTIONS` 프리플라이트 및 `Access-Control-Allow-Origin` 헤더 처리 (외부 정적 랜딩 사이트에서 호출 가능하도록 허용)
@@ -83,11 +83,11 @@
     - `ingestAndAllocateLead` 호출 후 결과 반환
   - **구현 완료 판단 기준**: 유효한 `apiKey`로 `POST /api/v1/leads` 호출 시 `201 Created`와 함께 자동 배정된 결과가 생성됨.
 
-- [ ] **T-302: 인증 API (`/api/auth/login`, `/api/auth/logout`, `/api/auth/me`)**
+- [x] **T-302: 인증 API (`/api/auth/login`, `/api/auth/logout`, `/api/auth/me`)**
   - **대상 경로**: `admin-system/src/app/api/auth/login/route.ts`, `logout/route.ts`, `me/route.ts`
   - **구현 완료 판단 기준**: 로그인 성공 시 `HttpOnly` 세션 쿠키가 설정되고 `/api/auth/me`에서 현재 사용자 정보(`role`, `isDbReceiveOn`, `isSmsReceiveOn` 등)를 반환함.
 
-- [ ] **T-303: 관리자 전용 API (`/api/admin/*`)**
+- [x] **T-303: 관리자 전용 API (`/api/admin/*`)**
   - **대상 경로**:
     - `admin-system/src/app/api/admin/leads/route.ts` (전체 DB 조회/필터링 및 관리자 수동 DB 등록)
     - `admin-system/src/app/api/admin/leads/[id]/assign/route.ts` (특정 순번/TM 직접 배정 + 순번 소모 옵션)
@@ -97,7 +97,7 @@
     - `admin-system/src/app/api/admin/sms-logs/route.ts` (SMS 발송 로그 조회 및 기본 템플릿 수정)
   - **구현 완료 판단 기준**: 관리자 세션에서 모든 API가 정상 동작하고, TM 세션으로 호출 시 `403`으로 차단됨.
 
-- [ ] **T-304: TM 전용 API (`/api/tm/*`) 및 연락처 원문 열람 보안 API**
+- [x] **T-304: TM 전용 API (`/api/tm/*`) 및 연락처 원문 열람 보안 API**
   - **대상 경로**:
     - `admin-system/src/app/api/tm/leads/route.ts` (`assignedTmId === session.userId`인 DB만 반환)
     - `admin-system/src/app/api/tm/leads/[id]/route.ts` (본인 배정 DB의 상담 상태/견적가/차량번호 수정 및 상담 메모 추가)
@@ -110,12 +110,12 @@
 ## Track 4: 프론트엔드 웹 UI 구현 (관리자 콘솔 & TM 워크스페이스)
 > **선행 조건**: Track 3 완료 (또는 API 규격에 맞춰 병렬 개발 가능)
 
-- [ ] **T-401: 로그인 화면 (`/login`) 및 루트 리다이렉션 (`/`)**
+- [x] **T-401: 로그인 화면 (`/login`) 및 루트 리다이렉션 (`/`)**
   - **대상 경로**: `admin-system/src/app/login/page.tsx`, `admin-system/src/app/page.tsx`
   - **상세 내용**: 아이디/비밀번호 로그인 폼 + 테스트 편의를 위한 `[빠른 로그인: 👑 관리자 | 👤 TM 1 | 👤 TM 2 | 👤 TM 3 | 👤 TM 4]` 원클릭 데모 버튼 제공. 로그인 시 `ADMIN`은 `/admin`, `TM`은 `/tm`으로 자동 이동.
   - **구현 완료 판단 기준**: `/login`에서 관리자 및 각 TM 계정으로 즉시 로그인 및 전환 가능.
 
-- [ ] **T-402: 관리자 통합 대시보드 (`/admin`) 구현**
+- [x] **T-402: 관리자 통합 대시보드 (`/admin`) 구현**
   - **대상 경로**: `admin-system/src/app/admin/page.tsx`
   - **상세 내용**: `SPEC.md` 4.1절의 4개 탭 완비:
     1. **통합 DB 관리 탭**: 필터, 마스킹 연락처 열람, 특정 순번(TM) 직접 배정 모달(`자동 순번 1회 소모` 체크박스 포함), 상담 메모/상태 수정.
@@ -124,7 +124,7 @@
     4. **SMS 발송 내역 & 유입 시뮬레이터 탭**: 사이트별 가상 DB 1클릭 유입 테스트기 + 실시간 SMS 발송 내역(문자 원문) 뷰어.
   - **구현 완료 판단 기준**: 4개 탭의 모든 조회·생성·배정·포인터 변경 기능이 새로고침 없이 반영됨.
 
-- [ ] **T-403: TM 전용 워크스페이스 (`/tm`) 구현**
+- [x] **T-403: TM 전용 워크스페이스 (`/tm`) 구현**
   - **대상 경로**: `admin-system/src/app/tm/page.tsx`
   - **상세 내용**: `SPEC.md` 4.2절 반영:
     - 상단 고정 바에 **`DB 배정 수신 [ON/OFF]`**와 **`SMS 문자 알림 [ON/OFF]`** 스위치 분리 배치.
@@ -136,14 +136,14 @@
 ## Track 5: 정적 배포용 모집 사이트 프론트엔드 템플릿 & 통합 검증
 > **선행 조건**: Track 3 완료 (`POST /api/v1/leads` 연동)
 
-- [ ] **T-501: 도메인별 정적 배포용 고객 모집 사이트 템플릿 (`landing-site-template/`) 구현**
+- [x] **T-501: 도메인별 정적 배포용 고객 모집 사이트 템플릿 (`landing-site-template/`) 구현**
   - **대상 경로**: `landing-site-template/index.html`, `landing-site-template/config.js`, `landing-site-template/app.js`, `landing-site-template/styles.css`
   - **상세 내용**:
     - 백엔드 서버 없이 정적 파일만으로 동작하는 중고차 수출/내수매입 상담 신청 랜딩페이지.
     - 상단 데모 바에서 `[수출 사이트 | 내수매입 1 사이트 | 내수매입 2 사이트]` 프리셋을 바꾸거나 `config.js`를 수정해 즉시 각 사이트의 `API Key`로 중앙 서버(`POST /api/v1/leads`)에 고객 DB를 전송.
   - **구현 완료 판단 기준**: `landing-site-template/index.html`에서 차량/연락처 입력 후 제출 시 중앙 DB에 저장되고 순번대로 TM에게 자동 배정 및 SMS 기록이 생성됨.
 
-- [ ] **T-502: End-to-End 자동 검증 테스트 스크립트 실행 및 빌드 검증**
+- [x] **T-502: End-to-End 자동 검증 테스트 스크립트 실행 및 빌드 검증**
   - **대상 경로**: `admin-system/scripts/verify-e2e.ts`
   - **상세 내용**:
     - 시나리오 1: 수출/내수1/내수2 사이트에서 연속 DB 유입 시 `TM 1 → TM 2 → TM 3 → TM 4` 순환 배정 검증

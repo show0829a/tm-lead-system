@@ -1,0 +1,178 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  TM
+}
+
+enum LeadStatus {
+  UNASSIGNED // 미배정 (모든 TM이 DB 수신 Off일 때 대기열 보관)
+  NEW        // 신규배정
+  RECALL     // 부재/재통화예정
+  PROGRESS   // 상담중
+  VISIT      // 방문/견적진행
+  COMPLETED  // 계약/매입완료
+  CANCELED   // 진행불가/취소
+}
+
+enum AssignType {
+  AUTO       // 자동 배분 엔진에 의한 배정
+  MANUAL     // 관리자에 의한 수동/특정순번 지정 배정
+}
+
+enum SmsStatus {
+  MOCK_SENT  // 개발/테스트 모의 발송 완료
+  SENT       // 실제 SMS 발송 완료
+  FAILED     // 발송 실패
+  SKIPPED    // TM이 SMS 수신 Off 상태여서 발송 생략됨
+}
+
+model User {
+  id             String          @id @default(uuid())
+  loginId        String          @unique @map("login_id")
+  passwordHash   String          @map("password_hash")
+  name           String
+  phoneEncrypted String          @map("phone_encrypted")
+  phoneMasked    String          @map("phone_masked")
+  role           UserRole        @default(TM)
+  globalOrder    Int?            @map("global_order") // 기본 통합 순번 (1, 2, 3...)
+  isDbReceiveOn  Boolean         @default(true) @map("is_db_receive_on")
+  isSmsReceiveOn Boolean         @default(true) @map("is_sms_receive_on")
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  siteMappings   SiteTmMapping[]
+  assignedLeads  Lead[]          @relation("AssignedTm")
+  consultMemos   ConsultMemo[]
+  smsLogs        SmsLog[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Site {
+  id               String          @id @default(uuid())
+  name             String          // 예: 수출 사이트, 내수매입 1 사이트, 내수매입 2 사이트
+  domainUrl        String?         @map("domain_url") // 허용 CORS 도메인
+  apiKey           String          @unique @map("api_key") // 외부 프론트엔드 연동용 키 (sk_site_...)
+  useCustomMapping Boolean         @default(false) @map("use_custom_mapping") // false: 통합순번, true: 사이트 전용 매핑 순번
+  nextTmId         String?         @map("next_tm_id") // 사이트 전용 매핑 사용 시 '다음 차례' TM ID 포인터
+  smsTemplate      String?         @map("sms_template") // 사이트별 커스텀 문자 템플릿
+  isActive         Boolean         @default(true) @map("is_active")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  tmMappings       SiteTmMapping[]
+  leads            Lead[]
+
+  @@map("sites")
+}
+
+model SiteTmMapping {
+  id         String   @id @default(uuid())
+  siteId     String   @map("site_id")
+  tmId       String   @map("tm_id")
+  orderIndex Int      @map("order_index") // 해당 사이트 내 배분 순번 (1, 2, 3...)
+
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  tm         User     @relation(fields: [tmId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, tmId])
+  @@index([siteId, orderIndex])
+  @@map("site_tm_mappings")
+}
+
+model SystemAllocationConfig {
+  id                    Int      @id @default(1)
+  nextGlobalTmId        String?  @map("next_global_tm_id") // 통합 순번에서 '다음 차례' TM ID 포인터
+  defaultSmsTemplate    String   @default("[{siteName}] 신규DB 배정\n고객: {customerName} ({customerPhone})\n차량: {carModel} ({carYear})\n지역: {region}") @map("default_sms_template")
+  duplicateBlockMinutes Int      @default(10) @map("duplicate_block_minutes") // 동일 번호 중복 접수 차단 시간(분)
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("system_allocation_config")
+}
+
+model Lead {
+  id             String        @id @default(uuid())
+  siteId         String        @map("site_id")
+  assignedTmId   String?       @map("assigned_tm_id")
+  customerName   String        @map("customer_name")
+  phoneEncrypted String        @map("phone_encrypted") // AES-256-GCM 암호화 원문
+  phoneMasked    String        @map("phone_masked")    // 010-****-1234
+  phoneHash      String        @map("phone_hash")      // HMAC-SHA256 검색/중복방지 해시
+  carModel       String        @map("car_model")
+  carNumber      String?       @map("car_number")
+  carYear        String?       @map("car_year")
+  mileage        String?
+  region         String?
+  extraData      Json?         @default("{}") @map("extra_data")
+  estimatedPrice Int?          @map("estimated_price") // 예상 견적가 (만원 단위)
+  status         LeadStatus    @default(NEW)
+  assignType     AssignType    @default(AUTO) @map("assign_type")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  assignedAt     DateTime?     @map("assigned_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  site           Site          @relation(fields: [siteId], references: [id])
+  assignedTm     User?         @relation("AssignedTm", fields: [assignedTmId], references: [id])
+  memos          ConsultMemo[]
+  smsLogs        SmsLog[]
+  auditLogs      AuditLog[]
+
+  @@index([assignedTmId, status])
+  @@index([siteId, createdAt])
+  @@index([phoneHash, createdAt])
+  @@map("leads")
+}
+
+model ConsultMemo {
+  id        String   @id @default(uuid())
+  leadId    String   @map("lead_id")
+  authorId  String   @map("author_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@map("consult_memos")
+}
+
+model SmsLog {
+  id                  String    @id @default(uuid())
+  leadId              String    @map("lead_id")
+  tmId                String    @map("tm_id")
+  receiverPhoneMasked String    @map("receiver_phone_masked")
+  message             String
+  status              SmsStatus @default(MOCK_SENT)
+  errorMessage        String?   @map("error_message")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  lead                Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tm                  User      @relation(fields: [tmId], references: [id])
+
+  @@map("sms_logs")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  leadId    String?  @map("lead_id")
+  action    String   // VIEW_FULL_PHONE, MANUAL_ASSIGN, POINTER_CHANGE, STATUS_TOGGLE
+  detail    String?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

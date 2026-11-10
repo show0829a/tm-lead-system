@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="pageTitle">대한모터스 직수출·내수 매입본부 - 차량 매입 시세 조회</title>
+  <meta name="description" content="수출·내수 직거래 매입 시세 조회 및 감가 없는 당일 확정 견적. 전국 무료 방문 평가 및 당일 대금 지급." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Developer / Channel Preset Switcher Toolbar -->
+  <div class="channel-toolbar">
+    <div class="toolbar-inner">
+      <div class="toolbar-left">
+        <span class="toolbar-dot"></span>
+        <span class="toolbar-label">CHANNEL PREVIEW</span>
+        <span class="toolbar-desc">데모 프리셋 전환:</span>
+      </div>
+      <div class="preset-buttons" id="presetButtons">
+        <!-- Injected by app.js from config.js -->
+      </div>
+      <div class="toolbar-right tabular-nums" id="activeApiKeyBadge">
+        X-Site-Api-Key: sk_site_export_01
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-wrapper" style="display: flex; align-items: center; gap: 12px;">
+        <div class="brand-mark" id="brandMark">DM</div>
+        <div>
+          <div class="brand-title" id="siteNameHeader">대한모터스 해외 직수출 매입본부</div>
+          <div class="brand-subtitle" id="siteSubtitleHeader">주행거리 무관 해외 바이어 직수출 최고가 산정 · 당일 말소 및 대금 지급</div>
+        </div>
+      </div>
+      <div class="header-contact">
+        <span class="contact-label">직통 매입상담실</span>
+        <span class="contact-number tabular-nums">1544-8942</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main 2-Column Split Desktop Layout -->
+  <main class="desk-container">
+    <div class="split-layout">
+      <!-- Left Column: Editorial Valuation Briefing, 3-Step Process, Live Market Ticker -->
+      <section class="left-briefing">
+        <div class="channel-tag-row">
+          <span class="channel-badge" id="channelBadge">EXPORT DIRECT DESK</span>
+          <span class="channel-ref tabular-nums">국토교통부 정식 등록 매매·수출상사</span>
+        </div>
+
+        <h1 class="briefing-title" id="heroTitle">
+          수출·내수 직거래 매입 시세 조회<br />
+          <span class="title-highlight">감가 없는 당일 확정 견적</span>을 제시합니다
+        </h1>
+
+        <p class="briefing-lead" id="heroSubtitle">
+          중간 알선 수수료와 부당한 현장 감가를 배제합니다.
+          차량 기본 제원만 접수하시면 실시간 해외 직수출 시세와 내수 경매장 낙찰가를 비교 분석하여 가장 유리한 최고가 매입 조건을 안내해 드립니다.
+        </p>
+
+        <!-- Transparent 3-Step Appraisal Process -->
+        <div class="process-panel">
+          <div class="panel-header">
+            <span class="panel-title">표준 차량 매입 절차 (3-STEP PROCESS)</span>
+            <span class="panel-meta">당일 처리 원칙</span>
+          </div>
+          <div class="process-list">
+            <div class="process-item">
+              <div class="process-code tabular-nums">01</div>
+              <div class="process-content">
+                <div class="process-name">차량정보 접수</div>
+                <div class="process-desc">차종, 연식, 주행거리 및 지역 입력 (소요시간 30초)</div>
+              </div>
+            </div>
+            <div class="process-item">
+              <div class="process-code tabular-nums">02</div>
+              <div class="process-content">
+                <div class="process-name">전담 평가사 시세 산출</div>
+                <div class="process-desc">수출 바이어 단가 및 내수 실거래 데이터 비교 후 1:1 유선 안내</div>
+              </div>
+            </div>
+            <div class="process-item">
+              <div class="process-code tabular-nums">03</div>
+              <div class="process-content">
+                <div class="process-name">당일 방문 및 대금 지급</div>
+                <div class="process-desc">전국 원하는 장소 무료 방문 검차 · 계약 즉시 현장에서 대금 전액 송금</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Market Ticker / Recent Valuation Ledger Table -->
+        <div class="ticker-panel">
+          <div class="panel-header">
+            <span class="panel-title">금일 주요 매입 확정 시세표 (실거래 기준)</span>
+            <span class="panel-meta tabular-nums">단위: 만원</span>
+          </div>
+          <table class="market-table">
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>차종 / 연식</th>
+                <th>주행거리</th>
+                <th class="text-right">확정 매입가</th>
+              </tr>
+            </thead>
+            <tbody class="tabular-nums">
+              <tr>
+                <td><span class="type-tag export">직수출</span></td>
+                <td class="car-col">현대 그랜저 IG 2.4 가솔린 (2018)</td>
+                <td>142,000km</td>
+                <td class="text-right price-col">1,480만원</td>
+              </tr>
+              <tr>
+                <td><span class="type-tag dom">내수매입</span></td>
+                <td class="car-col">기아 카니발 4세대 9인승 디젤 (2021)</td>
+                <td>51,000km</td>
+                <td class="text-right price-col">3,190만원</td>
+              </tr>
+              <tr>
+                <td><span class="type-tag export">직수출</span></td>
+                <td class="car-col">기아 쏘렌토 더 마스터 2.0 (2019)</td>
+                <td>118,000km</td>
+                <td class="text-right price-col">1,890만원</td>
+              </tr>
+              <tr>
+                <td><span class="type-tag dom">프리미엄</span></td>
+                <td class="car-col">제네시스 G80 3.5T AWD (2022)</td>
+                <td>29,000km</td>
+                <td class="text-right price-col">5,050만원</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right Column: Structured Vehicle Valuation Form Ledger Card -->
+      <section class="right-form-column">
+        <div class="ledger-form-card">
+          <div class="ledger-card-header">
+            <div>
+              <span class="ledger-eyebrow">VEHICLE VALUATION REQUEST</span>
+              <h2 class="ledger-title">차량 매입 시세 조회 신청서</h2>
+            </div>
+            <span class="status-indicator">무료 시세 산출</span>
+          </div>
+
+          <form id="leadForm" novalidate>
+            <div class="form-body">
+              <!-- License Plate Style Vehicle Number Input -->
+              <div class="form-group full-width">
+                <label class="form-label" for="carNumber">
+                  차량 등록번호 (선택 입력 시 제원 자동 확인)
+                </label>
+                <div class="plate-input-wrapper">
+                  <span class="plate-kr-badge">KOR</span>
+                  <input
+                    type="text"
+                    id="carNumber"
+                    name="carNumber"
+                    class="plate-input tabular-nums"
+                    placeholder="123가 4568"
+                  />
+                </div>
+              </div>
+
+              <!-- Car Model -->
+              <div class="form-group full-width">
+                <label class="form-label" for="carModel">
+                  차종 및 세부 모델명 <span class="req">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="carModel"
+                  name="carModel"
+                  class="form-input"
+                  placeholder="예: 그랜저 IG 2.4 프리미엄 / 카니발 4세대 9인승"
+                  required
+                />
+              </div>
+
+              <!-- Car Year & Mileage -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="carYear">
+                    연식 (년형)
+                  </label>
+                  <input
+                    type="text"
+                    id="carYear"
+                    name="carYear"
+                    class="form-input tabular-nums"
+                    placeholder="예: 2020"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="mileage">
+                    주행거리 (km)
+                  </label>
+                  <input
+                    type="text"
+                    id="mileage"
+                    name="mileage"
+                    class="form-input tabular-nums"
+                    placeholder="예: 65,000km"
+                  />
+                </div>
+              </div>
+
+              <!-- Customer Name & Phone -->
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="customerName">
+                    신청인 성명 <span class="req">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="customerName"
+                    name="customerName"
+                    class="form-input"
+                    placeholder="예: 홍길동"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="customerPhone">
+                    연락처 (휴대전화) <span class="req">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="customerPhone"
+                    name="customerPhone"
+                    class="form-input tabular-nums"
+                    placeholder="010-1234-5678"
+                    maxlength="13"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Region -->
+              <div class="form-group full-width">
+                <label class="form-label" for="region">
+                  차량 소재지 (출장 방문 희망 지역)
+                </label>
+                <input
+                  type="text"
+                  id="region"
+                  name="region"
+                  class="form-input"
+                  placeholder="예: 서울 강남구 / 경기 수원시 / 인천 연수구"
+                />
+              </div>
+
+              <!-- Consent Checkbox -->
+              <div class="consent-box">
+                <input type="checkbox" id="privacyConsent" name="privacyConsent" required />
+                <label for="privacyConsent" class="consent-text">
+                  <strong>[필수]</strong> 개인정보 수집 및 이용에 동의합니다.
+                  (수집항목: 성명, 연락처, 차량정보 / 목적: 매입 시세 산출 및 전담 평가사 안내)
+                  <button type="button" class="terms-link" id="openTermsBtn">[전문 보기]</button>
+                </label>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" id="submitBtn" class="cta-btn">
+                <span id="submitBtnText">매입 시세 조회 및 확정 견적 신청</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <div class="ledger-card-footer">
+            <span>입력하신 정보는 암호화 전송되며 시세 안내 목적 외에 사용되지 않습니다.</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Business Registration Trust Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-biz-info">
+        <strong>대한모터스 직수출·내수 매입본부</strong> &bull; 사업자등록번호: <span class="tabular-nums">129-86-45910</span> &bull; 자동차매매업 등록번호: 제2026-인천연수-0048호
+      </div>
+      <div class="footer-sub">
+        소재지: 인천광역시 연수구 아암대로 수출단지 302호 / 경기도 수원시 권선구 평동로 매매단지 &bull; 개인정보보호책임자: 차량운영본부
+      </div>
+    </div>
+  </footer>
+
+  <!-- Privacy Policy Terms Modal -->
+  <div class="modal-overlay" id="termsModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4>개인정보 수집 및 이용 동의 (전문)</h4>
+        <button type="button" class="modal-close" id="closeTermsBtn" aria-label="닫기">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>1. 수집하는 개인정보 항목</strong></p>
+        <p>- 필수항목: 성명, 연락처(휴대전화번호), 차종/모델명</p>
+        <p>- 선택항목: 차량번호, 연식, 주행거리, 차량 소재 지역</p>
+        <br />
+        <p><strong>2. 개인정보의 수집 및 이용 목적</strong></p>
+        <p>- 수출·내수 중고차 매입 시세 산정 및 전담 평가사 유선 상담 안내</p>
+        <p>- 무료 방문 평가 일정 조율 및 견적 내역 안내</p>
+        <br />
+        <p><strong>3. 개인정보의 보유 및 이용 기간</strong></p>
+        <p>- 시세 조회 신청일로부터 1년간 보관 후 지체 없이 파기합니다.</p>
+        <br />
+        <p><strong>4. 동의 거부 권리 및 불이익</strong></p>
+        <p>- 귀하는 개인정보 수집 동의를 거부할 권리가 있으나, 필수항목 미동의 시 매입 시세 산출 서비스 이용이 제한됩니다.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-btn" id="confirmTermsBtn">동의 및 닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Confirmation Modal -->
+  <div class="modal-overlay" id="successModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4>시세 조회 접수가 완료되었습니다</h4>
+        <button type="button" class="modal-close" id="closeSuccessHeaderBtn" aria-label="닫기">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 14px; color: #18181b; font-weight: 600; margin-bottom: 8px;">
+          전담 차량 평가사가 배정되어 실시간 매입 시세를 산출 중입니다.
+        </p>
+        <p style="font-size: 13px; color: #52525b; margin-bottom: 16px;">
+          접수하신 연락처로 곧 확정 견적 안내 전화를 드리겠습니다.
+        </p>
+        <div class="receipt-box tabular-nums">
+          <div class="receipt-row">
+            <span class="receipt-label">접수 번호 (REF)</span>
+            <span class="receipt-value" id="successLeadId">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">접수 채널</span>
+            <span class="receipt-value" id="successSiteName">-</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-btn" id="closeSuccessBtn" style="width: 100%;">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-msg" id="toastMsg">
+    <span class="toast-badge" id="toastIcon">NOTICE</span>
+    <span id="toastText">알림 내용</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
