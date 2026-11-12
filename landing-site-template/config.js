@@ -8,6 +8,7 @@ window.LANDING_CONFIG = {
   API_BASE_URL: 'http://localhost:3000',
   SITE_API_KEY: 'sk_site_export_01',
   THEME_COLOR: '#0F172A',
+  DEBUG_MODE: false, // false: 실제 고객용 운영 화면 (상단 테스트 바 숨김), true: 디버그 채널 전환 바 표시
   // 데모 편의를 위한 3대 시드 사이트 프리셋
   PRESETS: [
     {
@@ -17,7 +18,7 @@ window.LANDING_CONFIG = {
       title: '대한모터스 해외 직수출 매입본부',
       subtitle: '주행거리 무관 해외 바이어 직수출 최고가 산정 · 당일 말소 및 대금 지급',
       themeColor: '#0F172A',
-      badge: 'EXPORT DIRECT DESK',
+      badge: '해외 직수출 공식 접수처',
     },
     {
       id: 'dom1',
@@ -26,16 +27,16 @@ window.LANDING_CONFIG = {
       title: '대한모터스 내수 다이렉트 매입센터',
       subtitle: '전국 무료 출장 감정 · 감가 없는 당일 확정 견적 및 즉시 명의이전',
       themeColor: '#18181B',
-      badge: 'DOMESTIC DIRECT #01',
+      badge: '내수 다이렉트 1센터',
     },
     {
       id: 'dom2',
-      name: '내수매입 2 사이트 (전용TM)',
+      name: '내수매입 2 사이트 (전용 상담원)',
       key: 'sk_site_dom2_03',
       title: '프리미엄 세단·수입차 전담 매입데스크',
       subtitle: '제네시스·수입 세단 1:1 수석 평가사 전담 배정 및 고가 매입 보장',
       themeColor: '#0369A1',
-      badge: 'PREMIUM DESK #02',
+      badge: '프리미엄 전담 2센터',
     },
   ],
 };

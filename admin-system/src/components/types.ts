@@ -3,6 +3,7 @@ export interface TmUser {
   loginId: string;
   name: string;
   phone?: string | null;
+  phoneMasked?: string | null;
   role: 'ADMIN' | 'TM';
   isDbReceiveOn: boolean;
   isSmsReceiveOn: boolean;

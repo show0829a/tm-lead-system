@@ -8,6 +8,7 @@ interface SwitchProps {
   onChange: (nextChecked: boolean) => void;
   disabled?: boolean;
   label?: string;
+  showStatusText?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -18,6 +19,7 @@ export function Switch({
   onChange,
   disabled = false,
   label,
+  showStatusText = true,
   size = 'md',
   className = '',
 }: SwitchProps) {
@@ -37,9 +39,9 @@ export function Switch({
   };
 
   const dimensions = {
-    sm: { track: 'w-11 h-6', thumb: 'w-4 h-4', translate: 'translate-x-5', text: 'text-[10px]' },
-    md: { track: 'w-14 h-7', thumb: 'w-5 h-5', translate: 'translate-x-7', text: 'text-[11px]' },
-    lg: { track: 'w-18 h-9', thumb: 'w-7 h-7', translate: 'translate-x-9', text: 'text-xs' },
+    sm: { track: 'w-9 h-5', thumb: 'w-3.5 h-3.5', translate: 'translate-x-4' },
+    md: { track: 'w-11 h-6', thumb: 'w-4 h-4', translate: 'translate-x-5' },
+    lg: { track: 'w-12 h-7', thumb: 'w-5 h-5', translate: 'translate-x-5' },
   }[size];
 
   return (
@@ -58,34 +60,36 @@ export function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={label || (checked ? '활성화됨' : '비활성화됨')}
+        aria-label={label || (checked ? '켜짐' : '꺼짐')}
         disabled={disabled}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        className={`relative inline-flex items-center rounded-md border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-1 ${
+        className={`relative inline-flex shrink-0 items-center rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-1 ${
           dimensions.track
         } ${
           disabled
-            ? 'bg-zinc-100 border-zinc-200 cursor-not-allowed opacity-60'
+            ? 'bg-zinc-200 cursor-not-allowed opacity-60'
             : checked
-            ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-700 cursor-pointer'
-            : 'bg-zinc-200 hover:bg-zinc-300 border-zinc-300 cursor-pointer'
+            ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
+            : 'bg-zinc-300 hover:bg-zinc-400 cursor-pointer'
         }`}
       >
         <span
-          className={`absolute font-mono font-bold uppercase select-none transition-opacity ${
-            dimensions.text
-          } ${checked ? 'left-1.5 text-white' : 'right-1.5 text-zinc-600'}`}
-        >
-          {checked ? 'ON' : 'OFF'}
-        </span>
-        <span
           aria-hidden="true"
-          className={`inline-block rounded-xs bg-white shadow-2xs transform transition-transform duration-150 ${
+          className={`inline-block rounded-full bg-white shadow-xs transform transition-transform duration-150 ${
             dimensions.thumb
-          } ${checked ? dimensions.translate : 'translate-x-0.5'}`}
+          } ${checked ? dimensions.translate : 'translate-x-1'}`}
         />
       </button>
+      {showStatusText && (
+        <span
+          className={`text-xs font-semibold select-none w-7 ${
+            checked ? 'text-emerald-700' : 'text-zinc-400'
+          }`}
+        >
+          {checked ? '켜짐' : '꺼짐'}
+        </span>
+      )}
     </div>
   );
 }

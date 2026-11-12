@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import { SiteItem, SmsLogItem, TmUser } from '../types';
+import { Select } from '../ui/Select';
+import { formatPhone } from '../ui/format';
 
 interface SimulatorTabProps {
   sites: SiteItem[];
   tms: TmUser[];
   smsLogs: SmsLogItem[];
   onRefresh: () => void;
+  isDebugMode?: boolean;
 }
 
 interface TestPreset {
@@ -46,7 +49,7 @@ const PRESETS: TestPreset[] = [
     estimatedPrice: 3200,
   },
   {
-    label: '제네시스 G80 (전용TM 사이트)',
+    label: '제네시스 G80 (전용 상담원 채널)',
     siteNameKeyword: '내수매입 2',
     customerName: '박세단',
     carModel: '제네시스 G80 3.5T AWD 시그니처 디자인',
@@ -73,6 +76,7 @@ export function SimulatorTab({
   tms,
   smsLogs,
   onRefresh,
+  isDebugMode = false,
 }: SimulatorTabProps) {
   // Form fields
   const [selectedSiteId, setSelectedSiteId] = useState<string>(sites[0]?.id || '');
@@ -164,9 +168,9 @@ export function SimulatorTab({
         success: true,
         leadId: data.leadId,
         assignedTmName: assignedTm
-          ? `${assignedTm.name} (#0${assignedTm.globalOrder}순번)`
+          ? `${assignedTm.name} (${assignedTm.globalOrder}순번)`
           : '미배정 (대기열 적재)',
-        status: data.status,
+        status: data.status === 'NEW' ? '신규 배정' : '미배정 대기',
         siteName: selectedSite.name,
       });
 
@@ -190,28 +194,29 @@ export function SimulatorTab({
   });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* Left Column: Lead Ingestion Simulator (5 cols) */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      {/* Left Column: Lead Ingestion Simulator (5 cols — Shown only in Debug Mode) */}
+      {isDebugMode && (
       <div className="lg:col-span-5 space-y-4">
-        <div className="p-4 rounded-lg bg-white border border-zinc-200 shadow-2xs">
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-zinc-200">
-            <div>
+        <div className="p-4 rounded-lg bg-white border border-amber-300 shadow-2xs">
+          <div className="flex items-start justify-between gap-3 min-h-[40px] mb-3 pb-3 border-b border-zinc-200">
+            <div className="min-w-0">
               <h3 className="font-bold text-sm text-zinc-900 tracking-tight">
-                실시간 가상 DB 유입 시뮬레이터
+                가상 상담 접수 테스트
               </h3>
               <p className="text-[11px] text-zinc-500 mt-0.5">
-                외부 사이트 웹훅 유입 및 순번 배정을 즉시 테스트합니다.
+                고객 상담 접수 및 순번 자동 배정 시뮬레이션
               </p>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-white font-mono font-semibold">
-              POST /api/v1/leads
+            <span className="text-[11px] px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold whitespace-nowrap shrink-0">
+              디버그 전용
             </span>
           </div>
 
           {/* Quick Presets */}
           <div className="mb-4">
-            <span className="block text-[11px] font-mono font-bold text-zinc-500 uppercase mb-1.5">
-              TEST PRESETS (1-CLICK FILL)
+            <span className="block text-xs font-semibold text-zinc-600 mb-1.5">
+              테스트 프리셋
             </span>
             <div className="grid grid-cols-2 gap-1.5">
               {PRESETS.map((preset) => (
@@ -219,12 +224,12 @@ export function SimulatorTab({
                   key={preset.label}
                   type="button"
                   onClick={() => handleApplyPreset(preset)}
-                  className="p-2 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 hover:border-zinc-400 text-left transition-colors duration-150"
+                  className="p-2.5 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 hover:border-zinc-400 text-left transition-colors duration-150"
                 >
                   <span className="block text-xs font-bold text-zinc-900 truncate">
                     {preset.label}
                   </span>
-                  <span className="block text-[10px] font-mono text-zinc-500 truncate mt-0.5">
+                  <span className="block text-[11px] text-zinc-500 truncate mt-0.5 tabular-nums">
                     {preset.customerName} &bull; {preset.carNumber}
                   </span>
                 </button>
@@ -235,27 +240,22 @@ export function SimulatorTab({
           {/* Simulation Form */}
           <form onSubmit={handleRunSimulation} className="space-y-3">
             <div>
-              <label
-                htmlFor="simSiteSelect"
-                className="block text-xs font-semibold text-zinc-700 mb-1"
-              >
-                유입 사이트 채널 *
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                접수 사이트 선택 *
               </label>
-              <select
-                id="simSiteSelect"
+              <Select
                 value={selectedSiteId}
-                onChange={(e) => setSelectedSiteId(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white"
-              >
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name} ({site.useCustomMapping ? '전용TM 순번' : '통합 순번'})
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedSiteId}
+                className="w-full"
+                options={sites.map((site) => ({
+                  value: site.id,
+                  label: site.name,
+                  subLabel: site.useCustomMapping ? '전용 순번' : '통합 순번',
+                }))}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label
                   htmlFor="simCustName"
@@ -269,7 +269,7 @@ export function SimulatorTab({
                   required
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
               </div>
               <div>
@@ -284,13 +284,13 @@ export function SimulatorTab({
                   type="text"
                   required
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                  onChange={(e) => setCustomerPhone(formatPhone(e.target.value))}
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label
                   htmlFor="simCarModel"
@@ -304,7 +304,7 @@ export function SimulatorTab({
                   required
                   value={carModel}
                   onChange={(e) => setCarModel(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
               </div>
               <div>
@@ -319,12 +319,12 @@ export function SimulatorTab({
                   type="text"
                   value={carNumber}
                   onChange={(e) => setCarNumber(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               <div>
                 <label
                   htmlFor="simCarYear"
@@ -337,7 +337,7 @@ export function SimulatorTab({
                   type="text"
                   value={carYear}
                   onChange={(e) => setCarYear(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                  className="w-full h-9 px-2.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
                 />
               </div>
               <div>
@@ -352,7 +352,7 @@ export function SimulatorTab({
                   type="text"
                   value={mileage}
                   onChange={(e) => setMileage(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                  className="w-full h-9 px-2.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
                 />
               </div>
               <div>
@@ -367,7 +367,7 @@ export function SimulatorTab({
                   type="text"
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  className="w-full h-9 px-2.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
               </div>
             </div>
@@ -376,12 +376,12 @@ export function SimulatorTab({
               <button
                 type="submit"
                 disabled={isSimulating}
-                className="w-full py-2.5 px-4 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-10 px-4 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSimulating ? (
-                  <span>트랜잭션 잠금 및 순번 배분 실행 중...</span>
+                  <span>순번 배정 처리 중...</span>
                 ) : (
-                  <span>가상 DB 유입 테스트 전송</span>
+                  <span>가상 상담 신청 접수하기</span>
                 )}
               </button>
             </div>
@@ -399,38 +399,38 @@ export function SimulatorTab({
               {simResult.success ? (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between font-bold text-emerald-900 text-xs">
-                    <span>DB 유입 및 순번 배정 완료</span>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 border border-emerald-300">
-                      201 CREATED
+                    <span>상담 접수 및 순번 배정 완료</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 font-semibold">
+                      정상 접수
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1 pt-1 text-[11px]">
+                  <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
                     <div>
-                      <span className="text-emerald-700 font-medium">유입 채널: </span>
+                      <span className="text-emerald-700 font-medium">접수 사이트: </span>
                       <span className="font-semibold">{simResult.siteName}</span>
                     </div>
                     <div>
-                      <span className="text-emerald-700 font-medium">배정 TM: </span>
-                      <strong className="text-emerald-950 font-mono">
+                      <span className="text-emerald-700 font-medium">배정 상담원: </span>
+                      <strong className="text-emerald-950 font-semibold tabular-nums">
                         {simResult.assignedTmName}
                       </strong>
                     </div>
                     <div>
                       <span className="text-emerald-700 font-medium">상태: </span>
-                      <span className="font-mono">{simResult.status}</span>
+                      <span className="font-semibold">{simResult.status}</span>
                     </div>
                     <div>
-                      <span className="text-emerald-700 font-medium">Lead ID: </span>
-                      <span className="font-mono">{simResult.leadId?.slice(0, 8)}</span>
+                      <span className="text-emerald-700 font-medium">접수 번호: </span>
+                      <span className="font-mono tabular-nums">{simResult.leadId?.slice(0, 8)}</span>
                     </div>
                   </div>
-                  <p className="text-[10px] text-emerald-800 pt-1 border-t border-emerald-200">
-                    다음 배정 차례(NEXT) 포인터가 다음 활성 TM으로 이동되었습니다.
+                  <p className="text-[11px] text-emerald-800 pt-1.5 border-t border-emerald-200">
+                    배정 완료와 동시에 다음 배정 차례가 그 다음 순번 상담원으로 자동 이동되었습니다.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <div className="font-bold text-rose-800">유입 실패</div>
+                  <div className="font-bold text-rose-800">접수 실패</div>
                   <p className="text-rose-700">{simResult.error}</p>
                 </div>
               )}
@@ -438,40 +438,43 @@ export function SimulatorTab({
           )}
         </div>
       </div>
+      )}
 
-      {/* Right Column: SMS Dispatch Logs (7 cols) */}
-      <div className="lg:col-span-7 space-y-4">
+      {/* Right Column: SMS Dispatch Logs (7 cols in Debug Mode / 12 cols in Production Mode) */}
+      <div className={`${isDebugMode ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-4`}>
         <div className="p-4 rounded-lg bg-white border border-zinc-200 shadow-2xs">
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-zinc-200">
+          <div className="flex items-center justify-between min-h-[40px] mb-3 pb-3 border-b border-zinc-200 gap-2">
             <div>
               <h3 className="font-bold text-sm text-zinc-900 tracking-tight">
-                SMS 발송 내역 & 알림 로그
+                휴대폰 문자 발송 내역
               </h3>
               <p className="text-[11px] text-zinc-500 mt-0.5">
-                DB 배정 시 TM에게 발송된 실시간 문자 원문 및 수신 상태 기록입니다.
+                상담 배정 시 상담원에게 발송된 실시간 문자 원문 및 수신 상태 기록입니다.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <select
+            <div className="flex items-center gap-2 shrink-0">
+              <Select
                 value={smsStatusFilter}
-                onChange={(e) => setSmsStatusFilter(e.target.value as any)}
-                className="px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs bg-white text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
-                aria-label="SMS 발송 상태 필터"
-              >
-                <option value="ALL">ALL STATUS</option>
-                <option value="MOCK_SENT">MOCK_SENT (발송됨)</option>
-                <option value="SKIPPED">SKIPPED (생략됨)</option>
-              </select>
+                onChange={(val) => setSmsStatusFilter(val as any)}
+                className="w-44"
+                align="right"
+                ariaLabel="문자 발송 상태 필터"
+                options={[
+                  { value: 'ALL', label: `전체 내역 (${smsLogs.length}건)` },
+                  { value: 'MOCK_SENT', label: '발송 완료' },
+                  { value: 'SKIPPED', label: '발송 생략 (알림 꺼짐)' },
+                ]}
+              />
 
               <button
                 type="button"
                 onClick={onRefresh}
-                className="p-1.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors"
-                title="로그 새로고침"
-                aria-label="로그 새로고침"
+                className="h-9 w-9 flex items-center justify-center rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors"
+                title="내역 새로고침"
+                aria-label="내역 새로고침"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -481,11 +484,8 @@ export function SimulatorTab({
           {/* Logs List */}
           <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
             {filteredSmsLogs.length === 0 ? (
-              <div className="py-12 text-center text-zinc-400">
-                <p className="text-xs font-semibold text-zinc-600">발송된 SMS 내역이 없습니다.</p>
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  왼쪽 시뮬레이터에서 가상 DB를 유입시켜보세요.
-                </p>
+              <div className="py-14 text-center text-zinc-400">
+                <p className="text-xs font-semibold text-zinc-500">발송된 문자 내역이 없습니다.</p>
               </div>
             ) : (
               filteredSmsLogs.map((log) => {
@@ -503,16 +503,16 @@ export function SimulatorTab({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
                             isSkipped
                               ? 'bg-amber-100 text-amber-800 border-amber-300'
                               : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                           }`}
                         >
-                          {isSkipped ? 'SKIPPED (SMS 수신 OFF)' : 'MOCK_SENT (발송완료)'}
+                          {isSkipped ? '발송 생략 (문자 알림 꺼짐)' : '발송 완료'}
                         </span>
                         <span className="font-bold text-zinc-900">
-                          수신 TM: {log.tm?.name || '상담원'}
+                          수신 상담원: {log.tm?.name || '상담원'}
                         </span>
                       </div>
                       <span className="text-[11px] font-mono text-zinc-400 tabular-nums">
@@ -528,7 +528,7 @@ export function SimulatorTab({
                     <div className="text-[11px] text-zinc-500 mb-2 flex items-center gap-2">
                       <span>수신 번호:</span>
                       <span className="font-mono font-semibold text-zinc-700 tabular-nums">
-                        {log.receiverPhoneMasked}
+                        {formatPhone(log.receiverPhoneMasked)}
                       </span>
                     </div>
 

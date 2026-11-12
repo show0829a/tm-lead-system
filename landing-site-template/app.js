@@ -30,6 +30,11 @@
   const apiBaseUrl = config.API_BASE_URL || window.location.origin;
 
   // DOM Elements
+  const debugToolbar = document.getElementById('debugToolbar');
+  const landingDebugPill = document.getElementById('landingDebugPill');
+  const landingDebugDot = document.getElementById('landingDebugDot');
+  const landingDebugLabel = document.getElementById('landingDebugLabel');
+  const landingDebugBtn = document.getElementById('landingDebugBtn');
   const presetButtonsContainer = document.getElementById('presetButtons');
   const activeApiKeyBadge = document.getElementById('activeApiKeyBadge');
   const siteNameHeader = document.getElementById('siteNameHeader');
@@ -69,8 +74,58 @@
     document.documentElement.style.setProperty('--primary-hover', hex);
   }
 
-  // 2. Initialize Preset Switcher
+  // 2. Initialize Debug Mode & Preset Switcher
+  let isDebugMode = Boolean(config.DEBUG_MODE);
+  try {
+    const savedDebug = window.localStorage.getItem('tm_landing_debug_mode');
+    if (savedDebug !== null) {
+      isDebugMode = savedDebug === 'true';
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  function renderDebugModeState() {
+    if (debugToolbar) {
+      debugToolbar.style.display = isDebugMode ? 'block' : 'none';
+    }
+    if (landingDebugPill && landingDebugDot && landingDebugLabel && landingDebugBtn) {
+      if (isDebugMode) {
+        landingDebugPill.style.background = 'rgba(69, 26, 3, 0.95)';
+        landingDebugPill.style.borderColor = '#b45309';
+        landingDebugPill.style.color = '#fef3c7';
+        landingDebugDot.style.background = '#fbbf24';
+        landingDebugLabel.textContent = '디버그·테스트 모드';
+        landingDebugBtn.textContent = '운영 화면으로 전환';
+        landingDebugBtn.style.background = '#fbbf24';
+        landingDebugBtn.style.color = '#09090b';
+      } else {
+        landingDebugPill.style.background = 'rgba(24, 24, 27, 0.95)';
+        landingDebugPill.style.borderColor = '#3f3f46';
+        landingDebugPill.style.color = '#e4e4e7';
+        landingDebugDot.style.background = '#34d399';
+        landingDebugLabel.textContent = '실제 운영 모드';
+        landingDebugBtn.textContent = '디버그 켜기';
+        landingDebugBtn.style.background = '#ffffff';
+        landingDebugBtn.style.color = '#09090b';
+      }
+    }
+  }
+
+  if (landingDebugBtn) {
+    landingDebugBtn.addEventListener('click', () => {
+      isDebugMode = !isDebugMode;
+      try {
+        window.localStorage.setItem('tm_landing_debug_mode', String(isDebugMode));
+      } catch (e) {
+        // ignore
+      }
+      renderDebugModeState();
+    });
+  }
+
   function initPresets() {
+    renderDebugModeState();
     if (!presetButtonsContainer || !config.PRESETS) return;
 
     presetButtonsContainer.innerHTML = '';
@@ -115,20 +170,26 @@
     });
 
     updateBadge();
-    showToast(`연동 채널이 [${preset.name}]로 전환되었습니다.`, 'CHANNEL');
+    showToast(`연동 채널이 [${preset.name}]로 전환되었습니다.`, '채널 전환');
   }
 
   function updateBadge() {
     if (activeApiKeyBadge) {
-      activeApiKeyBadge.textContent = `X-Site-Api-Key: ${currentApiKey}`;
+      activeApiKeyBadge.textContent = `연동 API 키: ${currentApiKey}`;
     }
   }
 
-  // 3. Auto Phone Formatting (010-XXXX-XXXX)
+  // 3. Auto Phone Formatting (010-XXXX-XXXX / 02-XXXX-XXXX)
   function formatPhoneNumber(value) {
     const numbers = value.replace(/[^0-9]/g, '');
     if (numbers.length <= 3) return numbers;
+    if (numbers.startsWith('02')) {
+      if (numbers.length <= 5) return `${numbers.slice(0, 2)}-${numbers.slice(2)}`;
+      if (numbers.length <= 9) return `${numbers.slice(0, 2)}-${numbers.slice(2, 5)}-${numbers.slice(5, 9)}`;
+      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`;
+    }
     if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    if (numbers.length <= 10) return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
     return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
   }
 
@@ -141,7 +202,7 @@
 
   // 4. Toast helper
   let toastTimer = null;
-  function showToast(msg, badgeLabel = 'NOTICE') {
+  function showToast(msg, badgeLabel = '안내') {
     if (!toastMsg) return;
     if (toastTimer) clearTimeout(toastTimer);
 
@@ -198,26 +259,26 @@
       const isConsentChecked = privacyConsentInput?.checked;
 
       if (!carModel) {
-        showToast('차종 및 세부 모델명을 입력해주세요.', 'REQUIRED');
+        showToast('차종 및 세부 모델명을 입력해주세요.', '필수 입력');
         carModelInput?.focus();
         return;
       }
 
       if (!customerName) {
-        showToast('신청인 성명을 입력해주세요.', 'REQUIRED');
+        showToast('신청인 성명을 입력해주세요.', '필수 입력');
         customerNameInput?.focus();
         return;
       }
 
       const phoneDigits = rawPhone.replace(/[^0-9]/g, '');
       if (!phoneDigits || phoneDigits.length < 10) {
-        showToast('유효한 휴대전화 번호(10~11자리)를 입력해주세요.', 'REQUIRED');
+        showToast('유효한 휴대전화 번호(10~11자리)를 입력해주세요.', '필수 입력');
         customerPhoneInput?.focus();
         return;
       }
 
       if (!isConsentChecked) {
-        showToast('개인정보 수집 및 이용에 동의해주세요.', 'REQUIRED');
+        showToast('개인정보 수집 및 이용에 동의해주세요.', '필수 동의');
         privacyConsentInput?.focus();
         return;
       }
@@ -257,14 +318,14 @@
         } else if (response.status === 409) {
           showToast(
             '이미 접수된 연락처입니다. 전담 평가사가 곧 안내 전화를 드릴 예정입니다.',
-            'DUPLICATE'
+            '중복 안내'
           );
         } else {
-          showToast(data.error || '시세 조회 신청 중 오류가 발생했습니다.', 'ERROR');
+          showToast(data.error || '시세 조회 신청 중 오류가 발생했습니다.', '오류');
         }
       } catch (err) {
         console.error('Lead Submission Error:', err);
-        showToast('네트워크 연결을 확인한 후 다시 시도해주세요.', 'ERROR');
+        showToast('네트워크 연결을 확인한 후 다시 시도해주세요.', '오류');
       } finally {
         submitBtn.disabled = false;
         submitBtnText.textContent = '매입 시세 조회 및 확정 견적 신청';

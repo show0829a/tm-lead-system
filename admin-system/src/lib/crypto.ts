@@ -89,6 +89,8 @@ export function maskPhone(phone: string): string {
   return '***';
 }
 
+export { formatPhone } from './format';
+
 /**
  * Computes deterministic HMAC-SHA256 hash of a normalized phone number
  * for indexing, searching, and duplicate submission prevention.

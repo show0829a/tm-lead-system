@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
     // Sanitize TMs
     const sanitizedTms = tms.map((tm) => {
       const { passwordHash, phoneEncrypted, ...safeTm } = tm as any;
-      return safeTm;
+      return {
+        ...safeTm,
+        phone: tm.phoneMasked,
+      };
     });
 
     return NextResponse.json({

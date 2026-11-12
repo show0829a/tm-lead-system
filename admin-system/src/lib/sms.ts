@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { decryptPhone } from './crypto';
+import { decryptPhone, formatPhone } from './crypto';
 
 export interface SendAllocationSmsInput {
   leadId: string;
@@ -68,7 +68,7 @@ export async function sendAllocationSms({ leadId, tmId }: SendAllocationSmsInput
   // Decrypt customer phone for direct calling
   let plainCustomerPhone = lead.phoneMasked;
   try {
-    plainCustomerPhone = decryptPhone(lead.phoneEncrypted);
+    plainCustomerPhone = formatPhone(decryptPhone(lead.phoneEncrypted));
   } catch (err) {
     console.error('Failed to decrypt customer phone for SMS:', err);
   }

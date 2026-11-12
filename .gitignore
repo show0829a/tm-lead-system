@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+admin-system/node_modules/
+
+# Next.js build output
+.next/
+admin-system/.next/
+out/
+build/
+tsconfig.tsbuildinfo
+admin-system/tsconfig.tsbuildinfo
+
+# Local Database & data
+.pglite-data/
+admin-system/.pglite-data/
+*.db
+*.sqlite
+
+# Environment variables (keep .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+admin-system/.env
+!admin-system/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+~$*

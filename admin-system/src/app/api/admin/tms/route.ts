@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       const { passwordHash, phoneEncrypted, assignedLeads, ...safeTm } = tm;
       return {
         ...safeTm,
+        phone: tm.phoneMasked,
         assignedLeadsCount: assignedLeads?.length || 0,
       };
     });

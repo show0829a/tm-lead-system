@@ -47,15 +47,17 @@ export function Modal({
 
   return (
     <div
+      onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 transition-opacity duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
-        className={`w-full ${maxWidthClass} bg-white rounded-lg shadow-lg border border-zinc-200 overflow-hidden`}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full ${maxWidthClass} bg-white rounded-lg shadow-lg border border-zinc-200`}
       >
-        <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+        <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 rounded-t-lg">
           <div>
             <h2 id="modal-title" className="text-sm font-bold text-zinc-900 tracking-tight">
               {title}
@@ -67,7 +69,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-md hover:bg-zinc-200/60 transition-colors duration-150"
+            className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 rounded-md hover:bg-zinc-200/60 transition-colors duration-150"
             aria-label="닫기"
           >
             <svg
@@ -85,7 +87,7 @@ export function Modal({
             </svg>
           </button>
         </div>
-        <div className="p-5 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="p-5 max-h-[82vh] overflow-y-auto rounded-b-lg">{children}</div>
       </div>
     </div>
   );

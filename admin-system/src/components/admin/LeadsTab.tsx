@@ -4,6 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { LeadItem, TmUser, SiteItem } from '../types';
 import { StatusBadge, STATUS_OPTIONS } from '../ui/StatusBadge';
 import { Modal } from '../ui/Modal';
+import { Select } from '../ui/Select';
+import { formatPhone } from '../ui/format';
 
 interface LeadsTabProps {
   leads: LeadItem[];
@@ -60,6 +62,55 @@ export function LeadsTab({
   const [newEstimatedPrice, setNewEstimatedPrice] = useState('');
   const [isCreatingLead, setIsCreatingLead] = useState(false);
 
+  const hasActiveFilter =
+    searchTerm.trim() !== '' ||
+    statusFilter !== 'ALL' ||
+    siteFilter !== 'ALL' ||
+    tmFilter !== 'ALL';
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('ALL');
+    setSiteFilter('ALL');
+    setTmFilter('ALL');
+  };
+
+  // Dropdown Options
+  const statusSelectOptions = useMemo(
+    () => [
+      { value: 'ALL', label: `상태 전체 (${leads.length}건)` },
+      ...STATUS_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: `${opt.label} (${leads.filter((l) => l.status === opt.value).length}건)`,
+      })),
+    ],
+    [leads]
+  );
+
+  const siteSelectOptions = useMemo(
+    () => [
+      { value: 'ALL', label: '접수 사이트 전체' },
+      ...sites.map((site) => ({
+        value: site.id,
+        label: site.name,
+      })),
+    ],
+    [sites]
+  );
+
+  const tmSelectOptions = useMemo(
+    () => [
+      { value: 'ALL', label: '담당 TM 전체' },
+      { value: 'UNASSIGNED', label: '미배정 대기 건만', keywords: '미배정 대기' },
+      ...tms.map((tm) => ({
+        value: tm.id,
+        label: `${tm.name} (${tm.globalOrder}순번)`,
+        keywords: `${tm.loginId} ${tm.globalOrder}순번 ${tm.globalOrder}`,
+      })),
+    ],
+    [tms]
+  );
+
   // Filtered Leads
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -109,7 +160,7 @@ export function LeadsTab({
       }
       setRevealedPhones((prev) => ({
         ...prev,
-        [leadId]: data.fullPhone || data.phone || '열람 완료',
+        [leadId]: formatPhone(data.fullPhone || data.phone) || '열람 완료',
       }));
     } catch (err: any) {
       alert(err.message || '연락처 복호화에 실패했습니다.');
@@ -233,7 +284,7 @@ export function LeadsTab({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'DB 접수에 실패했습니다.');
+        throw new Error(data.error || '상담 접수에 실패했습니다.');
       }
 
       setIsAddLeadModalOpen(false);
@@ -247,7 +298,7 @@ export function LeadsTab({
       setNewEstimatedPrice('');
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'DB 생성 중 오류가 발생했습니다.');
+      alert(err.message || '상담 등록 중 오류가 발생했습니다.');
     } finally {
       setIsCreatingLead(false);
     }
@@ -255,10 +306,10 @@ export function LeadsTab({
 
   return (
     <div className="space-y-4">
-      {/* Search & Filter Header Bar */}
-      <div className="p-3.5 rounded-lg bg-white border border-zinc-200 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+      {/* Search & Filter Header Bar (All controls strictly h-9 aligned) */}
+      <div className="p-3.5 rounded-lg bg-white border border-zinc-200 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
         {/* Search Input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[220px]">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -269,7 +320,7 @@ export function LeadsTab({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="고객명, 차종, 차량번호, 연락처 검색..."
-            className="w-full pl-9 pr-14 py-1.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-zinc-50/50 focus:bg-white transition-colors"
+            className="w-full h-9 pl-9 pr-14 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 bg-zinc-50/50 focus:bg-white transition-colors"
           />
           {searchTerm && (
             <button
@@ -282,53 +333,48 @@ export function LeadsTab({
           )}
         </div>
 
-        {/* Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Custom Aligned Filter Dropdowns & Action Buttons */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           {/* Status Filter */}
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs font-medium text-zinc-800 bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 tabular-nums"
-            aria-label="상태 필터"
-          >
-            <option value="ALL">상태 전체 ({leads.length})</option>
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label} ({leads.filter((l) => l.status === opt.value).length})
-              </option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            options={statusSelectOptions}
+            className="w-full sm:w-40"
+            ariaLabel="상담 상태 필터"
+          />
 
           {/* Site Filter */}
-          <select
+          <Select
             value={siteFilter}
-            onChange={(e) => setSiteFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs font-medium text-zinc-800 bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900"
-            aria-label="사이트 필터"
-          >
-            <option value="ALL">유입 채널 전체</option>
-            {sites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-              </option>
-            ))}
-          </select>
+            onChange={setSiteFilter}
+            options={siteSelectOptions}
+            searchable
+            searchPlaceholder="접수 사이트 이름 검색..."
+            className="w-full sm:w-44"
+            ariaLabel="접수 사이트 필터"
+          />
 
           {/* TM Filter */}
-          <select
+          <Select
             value={tmFilter}
-            onChange={(e) => setTmFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md border border-zinc-300 text-xs font-medium text-zinc-800 bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 tabular-nums"
-            aria-label="상담원 필터"
-          >
-            <option value="ALL">담당 TM 전체</option>
-            <option value="UNASSIGNED">미배정 대기 건만</option>
-            {tms.map((tm) => (
-              <option key={tm.id} value={tm.id}>
-                {tm.name} (#0{tm.globalOrder}순번)
-              </option>
-            ))}
-          </select>
+            onChange={setTmFilter}
+            options={tmSelectOptions}
+            searchable
+            searchPlaceholder="상담원 이름, 아이디, 순번 검색..."
+            className="col-span-2 sm:col-span-1 w-full sm:w-44"
+            ariaLabel="담당 상담원 필터"
+          />
+
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="col-span-2 sm:col-span-1 h-9 px-3 rounded-md border border-zinc-300 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-xs font-medium transition-colors whitespace-nowrap"
+            >
+              필터 초기화
+            </button>
+          )}
 
           {/* Manual Add Lead Button */}
           <button
@@ -337,52 +383,196 @@ export function LeadsTab({
               setNewSiteId(sites[0]?.id || '');
               setIsAddLeadModalOpen(true);
             }}
-            className="px-3 py-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 whitespace-nowrap"
+            className="col-span-2 sm:col-span-1 h-9 px-3.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
             <span>+</span>
-            <span>신규 DB 등록</span>
+            <span>상담 직접 등록</span>
           </button>
         </div>
       </div>
 
-      {/* Leads Table */}
+      {/* Leads List: Desktop Table (md+) & Mobile Touch Cards (<md) */}
       <div className="bg-white rounded-lg border border-zinc-200 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
+        {/* A. Mobile Touch Card View (<md) */}
+        <div className="md:hidden divide-y divide-zinc-200">
+          {filteredLeads.length === 0 ? (
+            <div className="py-12 px-4 text-center text-zinc-400">
+              <p className="text-xs font-semibold text-zinc-600">
+                조건에 일치하는 상담 내역이 없습니다.
+              </p>
+              <p className="text-[11px] text-zinc-400 mt-1">
+                검색어나 필터 조건을 변경하거나 상담을 직접 등록해보세요.
+              </p>
+            </div>
+          ) : (
+            filteredLeads.map((lead) => {
+              const isRevealed = Boolean(revealedPhones[lead.id]);
+              const displayPhone = formatPhone(
+                isRevealed ? revealedPhones[lead.id] : lead.phoneMasked
+              );
+              const isUnassigned = !lead.assignedTmId;
+
+              return (
+                <div
+                  key={lead.id}
+                  className={`p-4 space-y-3 ${
+                    isUnassigned ? 'bg-rose-50/20' : ''
+                  }`}
+                >
+                  {/* Top Row: Site + Date + Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-800 border border-zinc-200 whitespace-nowrap shrink-0">
+                        {lead.site?.name || '수출 사이트'}
+                      </span>
+                      <span className="text-[11px] font-mono text-zinc-400 tabular-nums whitespace-nowrap">
+                        {new Date(lead.createdAt).toLocaleDateString('ko-KR', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <StatusBadge status={lead.status} size="sm" />
+                  </div>
+
+                  {/* Middle Row: Customer Name/Region & Assigned TM */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-baseline gap-2 min-w-0">
+                      <span className="text-sm font-bold text-zinc-900 truncate">
+                        {lead.customerName}
+                      </span>
+                      <span className="text-xs text-zinc-500 truncate">
+                        {lead.region || '지역 미기재'}
+                      </span>
+                    </div>
+
+                    <div className="shrink-0">
+                      {lead.assignedTm ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-100 text-xs font-semibold text-zinc-800 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                          <span>{lead.assignedTm.name}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-300 whitespace-nowrap">
+                          미배정
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vehicle Spec Box */}
+                  <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200/80 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {lead.carNumber && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-xs bg-white border border-zinc-300 font-mono text-[11px] font-bold text-zinc-900 tabular-nums">
+                            {lead.carNumber}
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-zinc-900">
+                          {lead.carModel}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 tabular-nums mt-0.5">
+                        {lead.carYear && <span>{lead.carYear}년식</span>}
+                        {lead.carYear && lead.mileage && <span>&bull;</span>}
+                        {lead.mileage && <span>{lead.mileage}</span>}
+                      </div>
+                    </div>
+
+                    {lead.estimatedPrice && (
+                      <span className="text-xs font-mono font-bold text-zinc-900 tabular-nums shrink-0">
+                        {lead.estimatedPrice.toLocaleString()}만원
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom Touch Action Row: Phone & Assign/Memo Buttons */}
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <div className="flex items-center gap-2">
+                      {isRevealed ? (
+                        <a
+                          href={`tel:${displayPhone.replace(/[^0-9]/g, '')}`}
+                          className="h-8 px-2.5 rounded-md bg-sky-50 border border-sky-200 text-sky-800 font-mono text-xs font-bold tabular-nums inline-flex items-center gap-1.5"
+                        >
+                          <span>📞 {displayPhone}</span>
+                        </a>
+                      ) : (
+                        <>
+                          <span className="font-mono text-xs text-zinc-700 tabular-nums">
+                            {formatPhone(lead.phoneMasked)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRevealPhone(lead.id)}
+                            disabled={revealingId === lead.id}
+                            className="h-7 px-2 rounded text-[11px] font-semibold bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-300 whitespace-nowrap"
+                          >
+                            {revealingId === lead.id ? '확인 중' : '번호보기'}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openAssignModal(lead)}
+                        className="h-8 px-2.5 rounded-md text-xs font-semibold bg-white hover:bg-zinc-900 hover:text-white text-zinc-800 border border-zinc-300 transition-colors whitespace-nowrap"
+                      >
+                        {lead.assignedTmId ? '담당 변경' : 'TM 지정'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openDetailModal(lead)}
+                        className="h-8 px-2.5 rounded-md text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors tabular-nums whitespace-nowrap"
+                      >
+                        메모 ({lead.memos?.length || 0})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* B. Desktop Fixed-Column Table (md+) */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse min-w-[980px]">
             <thead>
-              <tr className="bg-zinc-50 border-b border-zinc-200 text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">
-                <th className="py-3 px-4">유입일시</th>
-                <th className="py-3 px-3">유입 채널</th>
-                <th className="py-3 px-3">고객명</th>
-                <th className="py-3 px-4">연락처 (AES-256)</th>
-                <th className="py-3 px-4">차량 사양 / 번호판</th>
-                <th className="py-3 px-3">지역 / 견적가</th>
-                <th className="py-3 px-3">담당 TM</th>
-                <th className="py-3 px-3">상담 상태</th>
-                <th className="py-3 px-4 text-right">관리 액션</th>
+              <tr className="bg-zinc-50/80 border-b border-zinc-200 text-[11px] font-semibold text-zinc-500">
+                <th className="py-3 px-4 w-28 whitespace-nowrap">접수일시</th>
+                <th className="py-3 px-3 w-32 whitespace-nowrap">접수 사이트</th>
+                <th className="py-3 px-3 w-24 whitespace-nowrap">고객명</th>
+                <th className="py-3 px-4 w-44 whitespace-nowrap">연락처</th>
+                <th className="py-3 px-4 min-w-[200px] whitespace-nowrap">차량 사양 / 번호판</th>
+                <th className="py-3 px-3 w-32 whitespace-nowrap">지역 / 견적가</th>
+                <th className="py-3 px-3 w-36 whitespace-nowrap">담당 TM</th>
+                <th className="py-3 px-3 w-28 whitespace-nowrap">상담 상태</th>
+                <th className="py-3 px-4 w-40 text-right whitespace-nowrap">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200">
               {filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-zinc-400">
+                  <td colSpan={9} className="py-14 text-center text-zinc-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <svg className="w-6 h-6 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                       </svg>
-                      <p className="text-xs font-semibold text-zinc-600">조건에 일치하는 DB가 없습니다.</p>
-                      <p className="text-[11px] text-zinc-400">
-                        검색어나 상태 필터 조건을 초기화해보세요.
-                      </p>
+                      <p className="text-xs font-semibold text-zinc-500">접수된 상담 내역이 없습니다.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredLeads.map((lead) => {
                   const isRevealed = Boolean(revealedPhones[lead.id]);
-                  const displayPhone = isRevealed
-                    ? revealedPhones[lead.id]
-                    : lead.phoneMasked;
+                  const displayPhone = formatPhone(
+                    isRevealed ? revealedPhones[lead.id] : lead.phoneMasked
+                  );
                   const isUnassigned = !lead.assignedTmId;
 
                   return (
@@ -393,7 +583,7 @@ export function LeadsTab({
                       }`}
                     >
                       {/* Created At */}
-                      <td className="py-3 px-4 whitespace-nowrap text-xs font-mono text-zinc-500 tabular-nums">
+                      <td className="py-3.5 px-4 whitespace-nowrap text-xs font-mono text-zinc-500 tabular-nums align-middle">
                         {new Date(lead.createdAt).toLocaleDateString('ko-KR', {
                           month: '2-digit',
                           day: '2-digit',
@@ -403,19 +593,19 @@ export function LeadsTab({
                       </td>
 
                       {/* Site Name */}
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-middle">
                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-100 text-zinc-800 border border-zinc-200">
                           {lead.site?.name || '수출 사이트'}
                         </span>
                       </td>
 
                       {/* Customer Name */}
-                      <td className="py-3 px-3 whitespace-nowrap text-xs font-bold text-zinc-900">
+                      <td className="py-3.5 px-3 whitespace-nowrap text-xs font-bold text-zinc-900 align-middle">
                         {lead.customerName}
                       </td>
 
-                      {/* Phone with inline Reveal Button */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      {/* Phone with inline Reveal Button (Fixed width cell) */}
+                      <td className="py-3.5 px-4 whitespace-nowrap align-middle">
                         <div className="flex items-center gap-2">
                           <span
                             className={`font-mono text-xs tabular-nums ${
@@ -424,27 +614,26 @@ export function LeadsTab({
                           >
                             {displayPhone}
                           </span>
-                          {!isRevealed && (
+                          {!isRevealed ? (
                             <button
                               type="button"
                               onClick={() => handleRevealPhone(lead.id)}
                               disabled={revealingId === lead.id}
-                              className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-300 transition-colors duration-150 disabled:opacity-50"
-                              title="감사 로그 기록 후 원문 열람"
+                              className="px-2 py-0.5 rounded text-[11px] font-semibold bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-300 transition-colors duration-150 disabled:opacity-50"
+                              title="열람 기록 저장 후 전체 번호 확인"
                             >
-                              {revealingId === lead.id ? '열람 중...' : '번호보기'}
+                              {revealingId === lead.id ? '확인 중' : '번호보기'}
                             </button>
-                          )}
-                          {isRevealed && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-medium">
-                              LOGGED
+                          ) : (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-semibold">
+                              열람됨
                             </span>
                           )}
                         </div>
                       </td>
 
                       {/* Car Info with License Plate Chip */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4 align-middle">
                         <div className="text-xs">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {lead.carNumber && (
@@ -456,7 +645,7 @@ export function LeadsTab({
                               {lead.carModel}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 tabular-nums mt-0.5">
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 tabular-nums mt-0.5">
                             {lead.carYear && <span>{lead.carYear}년식</span>}
                             {lead.carYear && lead.mileage && <span>&bull;</span>}
                             {lead.mileage && <span>{lead.mileage}</span>}
@@ -465,7 +654,7 @@ export function LeadsTab({
                       </td>
 
                       {/* Region & Price */}
-                      <td className="py-3 px-3 whitespace-nowrap text-xs">
+                      <td className="py-3.5 px-3 whitespace-nowrap text-xs align-middle">
                         <div className="text-zinc-700">{lead.region || '-'}</div>
                         <div className="text-[11px] text-zinc-500 tabular-nums font-mono">
                           {lead.estimatedPrice
@@ -475,36 +664,36 @@ export function LeadsTab({
                       </td>
 
                       {/* Assigned TM */}
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-middle">
                         {lead.assignedTm ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
                             <span className="text-xs font-semibold text-zinc-900">
                               {lead.assignedTm.name}
                             </span>
-                            <span className="text-[10px] text-zinc-400 font-mono">
-                              ({lead.assignType === 'AUTO' ? 'AUTO' : 'MANUAL'})
+                            <span className="text-[11px] text-zinc-400">
+                              ({lead.assignType === 'AUTO' ? '자동' : '수동'})
                             </span>
                           </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-300">
-                            UNASSIGNED
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-300">
+                            미배정
                           </span>
                         )}
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-3.5 px-3 whitespace-nowrap align-middle">
                         <StatusBadge status={lead.status} size="sm" />
                       </td>
 
-                      {/* Actions */}
-                      <td className="py-3 px-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      {/* Actions (Fixed button widths so rows align cleanly) */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-right align-middle">
+                        <div className="inline-flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => openAssignModal(lead)}
-                            className="px-2.5 py-1 rounded-md text-xs font-semibold bg-white hover:bg-zinc-900 hover:text-white text-zinc-800 border border-zinc-300 transition-colors duration-150"
+                            className="w-16 py-1 rounded-md text-xs font-semibold bg-white hover:bg-zinc-900 hover:text-white text-zinc-800 border border-zinc-300 transition-colors duration-150 text-center"
                           >
                             {lead.assignedTmId ? '담당 변경' : 'TM 지정'}
                           </button>
@@ -512,7 +701,7 @@ export function LeadsTab({
                           <button
                             type="button"
                             onClick={() => openDetailModal(lead)}
-                            className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors duration-150 tabular-nums"
+                            className="w-16 py-1 rounded-md text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors duration-150 tabular-nums text-center"
                             title="상담 메모 및 상태 변경"
                           >
                             메모 ({lead.memos?.length || 0})
@@ -532,26 +721,25 @@ export function LeadsTab({
       <Modal
         isOpen={Boolean(assignModalLead)}
         onClose={() => setAssignModalLead(null)}
-        title="담당 TM 직접 배정 / 변경"
-        description="관리자 권한으로 특정 상담원에게 DB를 직접 할당합니다."
+        title="담당 상담원(TM) 직접 배정"
       >
         {assignModalLead && (
           <form onSubmit={handleAssignSubmit} className="space-y-4">
             <div className="p-3.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-zinc-500">고객명:</span>
+                <span className="text-zinc-500">고객명</span>
                 <span className="font-bold text-zinc-900">
                   {assignModalLead.customerName}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">차량:</span>
-                <span className="font-semibold text-zinc-800 font-mono tabular-nums">
-                  {assignModalLead.carModel} ({assignModalLead.carNumber || '번호미입력'})
+                <span className="text-zinc-500">차량 정보</span>
+                <span className="font-semibold text-zinc-800 tabular-nums">
+                  {assignModalLead.carModel} ({assignModalLead.carNumber || '번호 미입력'})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">현재 담당:</span>
+                <span className="text-zinc-500">현재 담당</span>
                 <span className="font-semibold text-sky-700">
                   {assignModalLead.assignedTm?.name || '미배정 (대기 중)'}
                 </span>
@@ -559,26 +747,22 @@ export function LeadsTab({
             </div>
 
             <div>
-              <label
-                htmlFor="targetTmSelect"
-                className="block text-xs font-semibold text-zinc-700 mb-1.5"
-              >
+              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
                 배정할 상담원 선택
               </label>
-              <select
-                id="targetTmSelect"
+              <Select
                 value={selectedTargetTmId}
-                onChange={(e) => setSelectedTargetTmId(e.target.value)}
-                required
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white tabular-nums"
-              >
-                {tms.map((tm) => (
-                  <option key={tm.id} value={tm.id}>
-                    #{tm.globalOrder}순번: {tm.name} ({tm.loginId}) -{' '}
-                    {tm.isDbReceiveOn ? 'DB수신 ON' : 'DB수신 OFF'}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedTargetTmId}
+                className="w-full"
+                searchable
+                searchPlaceholder="상담원 이름, 아이디, 순번 검색..."
+                options={tms.map((tm) => ({
+                  value: tm.id,
+                  label: `${tm.globalOrder}순번 · ${tm.name} (${tm.loginId})`,
+                  subLabel: tm.isDbReceiveOn ? '배정 받기 켜짐' : '배정 받기 꺼짐',
+                  keywords: `${tm.name} ${tm.loginId} ${tm.globalOrder}`,
+                }))}
+              />
             </div>
 
             {/* Consume Turn Checkbox */}
@@ -591,13 +775,11 @@ export function LeadsTab({
                   className="mt-0.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 h-4 w-4"
                 />
                 <div className="text-xs">
-                  <span className="font-bold text-zinc-900">
-                    자동 배분 순번 1회 소모 (체크 시 다음 순번으로 포인터 이동)
+                  <span className="font-semibold text-zinc-900">
+                    다음 배정 순번 함께 갱신
                   </span>
-                  <p className="text-zinc-500 mt-0.5 leading-relaxed">
-                    체크 시: 다음 자동 배분 포인터(NEXT)가 선택한 TM의 다음 순번으로 자동 이동합니다.
-                    <br />
-                    체크 해제 시: 기존 자동 순번 포인터를 변경하지 않고 유지합니다.
+                  <p className="text-zinc-500 mt-0.5">
+                    선택한 상담원의 다음 순번으로 대기열 차례를 넘깁니다.
                   </p>
                 </div>
               </label>
@@ -607,14 +789,14 @@ export function LeadsTab({
               <button
                 type="button"
                 onClick={() => setAssignModalLead(null)}
-                className="px-3.5 py-2 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
+                className="h-9 px-3.5 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
               >
                 취소
               </button>
               <button
                 type="submit"
                 disabled={isAssigning}
-                className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                className="h-9 px-4 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
               >
                 {isAssigning ? '배정 중...' : '즉시 배정 확정'}
               </button>
@@ -634,24 +816,18 @@ export function LeadsTab({
         {detailModalLead && (
           <form onSubmit={handleSaveMemoAndStatus} className="space-y-4">
             <div>
-              <label
-                htmlFor="leadStatusSelect"
-                className="block text-xs font-semibold text-zinc-700 mb-1"
-              >
+              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
                 상담 진행 상태 변경
               </label>
-              <select
-                id="leadStatusSelect"
+              <Select
                 value={selectedLeadStatus}
-                onChange={(e) => setSelectedLeadStatus(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label} ({opt.value})
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedLeadStatus}
+                className="w-full"
+                options={STATUS_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
             </div>
 
             <div>
@@ -687,7 +863,7 @@ export function LeadsTab({
             <div>
               <label
                 htmlFor="newMemoTextarea"
-                className="block text-xs font-semibold text-zinc-700 mb-1"
+                className="block text-xs font-semibold text-zinc-700 mb-1.5"
               >
                 새 상담 메모 입력
               </label>
@@ -697,7 +873,7 @@ export function LeadsTab({
                 value={newMemoContent}
                 onChange={(e) => setNewMemoContent(e.target.value)}
                 placeholder="상담 통화 내용, 고객 희망 견적, 방문 일정 등을 기록하세요..."
-                className="w-full p-2.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="w-full p-2.5 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               />
             </div>
 
@@ -705,14 +881,14 @@ export function LeadsTab({
               <button
                 type="button"
                 onClick={() => setDetailModalLead(null)}
-                className="px-3.5 py-2 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
+                className="h-9 px-3.5 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
               >
                 닫기
               </button>
               <button
                 type="submit"
                 disabled={isAddingMemo}
-                className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                className="h-9 px-4 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
               >
                 {isAddingMemo ? '저장 중...' : '저장하기'}
               </button>
@@ -725,8 +901,7 @@ export function LeadsTab({
       <Modal
         isOpen={isAddLeadModalOpen}
         onClose={() => setIsAddLeadModalOpen(false)}
-        title="신규 고객 DB 직접 등록"
-        description="유선 인바운드 또는 오프라인 접수 DB를 시스템에 등록하여 자동 배분합니다."
+        title="신규 상담 신청 직접 등록"
         maxWidth="lg"
       >
         <form onSubmit={handleCreateLeadSubmit} className="space-y-3.5">
@@ -745,7 +920,7 @@ export function LeadsTab({
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
                 placeholder="예: 홍길동"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               />
             </div>
             <div>
@@ -760,9 +935,9 @@ export function LeadsTab({
                 type="text"
                 required
                 value={newCustomerPhone}
-                onChange={(e) => setNewCustomerPhone(e.target.value)}
+                onChange={(e) => setNewCustomerPhone(formatPhone(e.target.value))}
                 placeholder="예: 010-1234-5678"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
               />
             </div>
           </div>
@@ -782,7 +957,7 @@ export function LeadsTab({
                 value={newCarModel}
                 onChange={(e) => setNewCarModel(e.target.value)}
                 placeholder="예: 현대 아반떼 CN7"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               />
             </div>
             <div>
@@ -798,7 +973,7 @@ export function LeadsTab({
                 value={newCarNumber}
                 onChange={(e) => setNewCarNumber(e.target.value)}
                 placeholder="예: 12가 3456"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
               />
             </div>
           </div>
@@ -817,7 +992,7 @@ export function LeadsTab({
                 value={newCarYear}
                 onChange={(e) => setNewCarYear(e.target.value)}
                 placeholder="예: 2021"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
               />
             </div>
             <div>
@@ -833,7 +1008,7 @@ export function LeadsTab({
                 value={newMileage}
                 onChange={(e) => setNewMileage(e.target.value)}
                 placeholder="예: 45,000km"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
               />
             </div>
             <div>
@@ -849,31 +1024,25 @@ export function LeadsTab({
                 value={newRegion}
                 onChange={(e) => setNewRegion(e.target.value)}
                 placeholder="예: 서울 강남구"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label
-                htmlFor="createSiteSelect"
-                className="block text-xs font-semibold text-zinc-700 mb-1"
-              >
-                유입 사이트 채널
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                접수 사이트
               </label>
-              <select
-                id="createSiteSelect"
+              <Select
                 value={newSiteId}
-                onChange={(e) => setNewSiteId(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white"
-              >
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name} ({site.domainUrl})
-                  </option>
-                ))}
-              </select>
+                onChange={setNewSiteId}
+                className="w-full"
+                options={sites.map((site) => ({
+                  value: site.id,
+                  label: site.name,
+                }))}
+              />
             </div>
             <div>
               <label
@@ -888,7 +1057,7 @@ export function LeadsTab({
                 value={newEstimatedPrice}
                 onChange={(e) => setNewEstimatedPrice(e.target.value)}
                 placeholder="예: 1850"
-                className="w-full px-3 py-2 rounded-md border border-zinc-300 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono tabular-nums"
+                className="w-full h-9 px-3 rounded-md border border-zinc-300 text-xs focus:outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 font-mono tabular-nums"
               />
             </div>
           </div>
@@ -897,16 +1066,16 @@ export function LeadsTab({
             <button
               type="button"
               onClick={() => setIsAddLeadModalOpen(false)}
-              className="px-3.5 py-2 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
+              className="h-9 px-3.5 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={isCreatingLead}
-              className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              className="h-9 px-4 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              {isCreatingLead ? '등록 및 배분 중...' : 'DB 등록 및 자동 배분'}
+              {isCreatingLead ? '등록 및 배정 중...' : '상담 등록 및 자동 배정'}
             </button>
           </div>
         </form>

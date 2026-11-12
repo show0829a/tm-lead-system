@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireTmOrAdmin, handleAuthError } from '@/lib/auth';
-import { decryptPhone } from '@/lib/crypto';
+import { decryptPhone, formatPhone } from '@/lib/crypto';
 import { recordAuditLog } from '@/lib/audit';
 
 export async function POST(
@@ -32,8 +32,9 @@ export async function POST(
       );
     }
 
-    // Decrypt AES-256-GCM ciphertext
-    const fullPhone = decryptPhone(lead.phoneEncrypted);
+    // Decrypt AES-256-GCM ciphertext and format to 010-XXXX-XXXX
+    const decryptedRaw = decryptPhone(lead.phoneEncrypted);
+    const fullPhone = formatPhone(decryptedRaw);
 
     // Mandatory Audit Log entry
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
